@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 玻璃拟态调色板：白天=亮玻璃+深字，夜间=暗玻璃+浅字 -->
-    <color name="glass_bg">#59FFFFFF</color>
-    <color name="glass_stroke">#6BFFFFFF</color>
-    <color name="glass_chip">#40FFFFFF</color>
-    <color name="glass_text">#1F2140</color>
-    <color name="glass_sub">#5A5C86</color>
-    <color name="cta_bg">#F4F5FF</color>
-    <color name="cta_text">#241A5E</color>
-
-    <color name="primary">#6C5CE7</color>
-    <color name="ok">#5EE6A0</color>
-    <color name="ring_bg">#12102E</color>
-    <color name="win_bg">#FF6E62E8</color>
+    <!-- 极光深色调色板（单主题，闹钟 App 惯例暗色） -->
+    <color name="bg">#0A0C14</color>
+    <color name="card">#161927</color>
+    <color name="card_stroke">#1F2438</color>
+    <color name="chip_bg">#20243A</color>
+    <color name="text_main">#F2F4FF</color>
+    <color name="text_sub">#8A92B2</color>
+    <color name="accent">#7C6CFF</color>
+    <color name="accent2">#5AD8E6</color>
+    <color name="ok">#4ADE80</color>
+    <color name="cta_text">#0A0C14</color>
+    <color name="ring_bg">#0A0C14</color>
     <color name="ic_bg">#FF3F51B5</color>
 </resources>

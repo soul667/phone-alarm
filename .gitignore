@@ -5,3 +5,7 @@ __pycache__/
 *.pyc
 .DS_Store
 mcp/config.json
+mcp-node/config.json
+docs/video/*.mp4
+docs/video/*_cover.png
+*.idsig
