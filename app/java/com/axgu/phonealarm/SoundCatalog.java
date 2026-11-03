@@ -1,5 +1,7 @@
 package com.axgu.phonealarm;
 
+import android.content.Context;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -24,7 +26,9 @@ public class SoundCatalog {
             new Item("siren", "🚨 防空警报", R.raw.alarm_siren),
             new Item("klaxon", "🚢 舰船警报", R.raw.alarm_klaxon),
             new Item("pulse", "⚡ 紧急脉冲", R.raw.alarm_pulse),
-            new Item("birds", "🐦 晨间鸟鸣", R.raw.alarm_birds));
+            new Item("birds", "🐦 晨间鸟鸣", R.raw.alarm_birds),
+            new Item("epic", "🥁 史诗鼓点", R.raw.alarm_epic),
+            new Item("rock", "🎸 运动摇滚", R.raw.alarm_rock));
 
     public static final String DEFAULT_RING_NOW = "nuke"; // /api/ring 找手机用最炸的
 
@@ -38,5 +42,16 @@ public class SoundCatalog {
         if (key == null) return false;
         for (Item it : ALL) if (it.key.equals(key)) return true;
         return false;
+    }
+
+    /** 全局默认铃声（新闹钟缺省用它）：存 SharedPreferences。 */
+    public static String defaultKey(Context c) {
+        return c.getSharedPreferences("phone_alarm", Context.MODE_PRIVATE)
+                .getString("default_sound", "nuke");
+    }
+
+    public static void setDefaultKey(Context c, String key) {
+        c.getSharedPreferences("phone_alarm", Context.MODE_PRIVATE)
+                .edit().putString("default_sound", key).apply();
     }
 }

@@ -30,8 +30,10 @@ SOUND_NAMES = {
     "klaxon": "舰船警报",
     "pulse": "紧急脉冲",
     "birds": "晨间鸟鸣",
+    "epic": "史诗鼓点",
+    "rock": "运动摇滚",
 }
-SOUND_KEYS = "system/nuke/siren/klaxon/pulse/birds"
+SOUND_KEYS = "system/nuke/siren/klaxon/pulse/birds/epic/rock"
 
 
 def _cfg():
@@ -107,12 +109,15 @@ def phone_ping() -> str:
 
 @mcp.tool()
 def phone_set_alarm(hour: int, minute: int, label: str = "", days: list[int] | None = None,
-                    sound: str = "system") -> str:
+                    sound: str | None = None) -> str:
     """在手机上新建闹钟。hour 0-23，minute 0-59，label 是响铃界面显示的大字消息。
     days: 要重复的星期列表，1=周一 … 7=周日，如 [1,2,3,4,5]=工作日；不传（None）= 一次性闹钟。
-    sound: 内置铃声，可选 system/nuke/siren/klaxon/pulse/birds（nuke=核爆 siren=防空警报 klaxon=舰船警报 pulse=紧急脉冲 birds=晨间鸟鸣）。
+    sound: 内置铃声，可选 system/nuke/siren/klaxon/pulse/birds/epic/rock
+    （epic=史诗鼓点 rock=运动摇滚）；不传 sound 时用手机 App 里设置的默认铃声。
     返回创建好的闹钟（含 id）。"""
-    body = {"hour": hour, "minute": minute, "label": label or "", "sound": sound}
+    body = {"hour": hour, "minute": minute, "label": label or ""}
+    if sound:
+        body["sound"] = sound
     if days is not None:
         if not all(isinstance(d, int) and 1 <= d <= 7 for d in days):
             raise ValueError("days 取值必须是 1(周一) 到 7(周日) 的整数")
@@ -173,7 +178,7 @@ def phone_toggle_alarm(alarm_id: int) -> str:
 @mcp.tool()
 def phone_ring_now(message: str = "", sound: str = "nuke") -> str:
     """让手机立即响铃（用于找手机/立即提醒）。message 显示在响铃界面大字区。
-    sound 可选 system/nuke/siren/klaxon/pulse/birds，默认 nuke（核爆，确保找得到手机）。"""
+    sound 可选 system/nuke/siren/klaxon/pulse/birds/epic/rock，默认 nuke（核爆，确保找得到手机）。"""
     r = _req("POST", "/api/ring", {"message": message or "", "sound": sound})
     return json.dumps({"ok": bool(r.get("ok")), "ringing": True,
                        "hint": "手机正在响铃；结束后用 phone_stop_ring 停止"},
@@ -185,6 +190,15 @@ def phone_stop_ring() -> str:
     """停止手机上正在响的铃声。"""
     r = _req("POST", "/api/stop")
     return json.dumps({"ok": bool(r.get("ok")), "ringing": False}, ensure_ascii=False)
+
+
+@mcp.tool()
+def phone_set_default_sound(sound: str) -> str:
+    """设置手机 App 的默认铃声（之后 App 内新建、以及 phone_set_alarm 不传 sound 时都用它）。
+    sound 可选 system/nuke/siren/klaxon/pulse/birds/epic/rock。"""
+    r = _req("POST", "/api/settings", {"default_sound": sound})
+    return json.dumps({"ok": bool(r.get("ok")), "default_sound": r.get("default_sound"),
+                       "name": SOUND_NAMES.get(r.get("default_sound", ""), "?")}, ensure_ascii=False)
 
 
 @mcp.tool()

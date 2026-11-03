@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 玻璃拟态调色板：白天=亮玻璃+深字，夜间=暗玻璃+浅字 -->
+    <color name="glass_bg">#59FFFFFF</color>
+    <color name="glass_stroke">#6BFFFFFF</color>
+    <color name="glass_chip">#40FFFFFF</color>
+    <color name="glass_text">#1F2140</color>
+    <color name="glass_sub">#5A5C86</color>
+    <color name="cta_bg">#F4F5FF</color>
+    <color name="cta_text">#241A5E</color>
+
     <color name="primary">#6C5CE7</color>
-    <color name="primary_deep">#5A4BD1</color>
-    <color name="bg">#F3F4FA</color>
-    <color name="card">#FFFFFF</color>
-    <color name="text_main">#1B1D2A</color>
-    <color name="text_sub">#8A90A6</color>
-    <color name="chip_off_bg">#141B1D2A</color>
-    <color name="stroke">#1E1B1D2A</color>
-    <color name="ok">#34C759</color>
-    <color name="danger">#FF5A6E</color>
-    <color name="ring_bg">#0B0C14</color>
+    <color name="ok">#5EE6A0</color>
+    <color name="ring_bg">#12102E</color>
+    <color name="win_bg">#FF6E62E8</color>
     <color name="ic_bg">#FF3F51B5</color>
 </resources>

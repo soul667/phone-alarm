@@ -10,6 +10,8 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.RenderEffect;
+import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -17,11 +19,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -31,7 +33,7 @@ import org.json.JSONObject;
 
 import java.util.Calendar;
 
-/** 主界面：状态卡 + 闹钟列表 + 自定义添加对话框（星期芯片/铃声试听）。 */
+/** 主界面（玻璃拟态·单行卡片）：状态条 + 默认铃声芯片 + 单行闹钟卡 + 添加对话框。 */
 public class MainActivity extends Activity {
 
     private TextView statusTitle;
@@ -39,6 +41,7 @@ public class MainActivity extends Activity {
     private View statusDot;
     private TextView exactBtn;
     private TextView testBtn;
+    private TextView defaultSoundChip;
     private LinearLayout listContainer;
     private View emptyView;
 
@@ -69,12 +72,20 @@ public class MainActivity extends Activity {
         statusDot = findViewById(R.id.status_dot);
         exactBtn = findViewById(R.id.exact_btn);
         testBtn = findViewById(R.id.test_btn);
+        defaultSoundChip = findViewById(R.id.default_sound_chip);
         listContainer = findViewById(R.id.alarm_list);
         emptyView = findViewById(R.id.empty_view);
+
+        // 磨砂：把渐变网格背景整体打软（API 31+ 真模糊，旧版本保持原样也不难看）
+        View bg = findViewById(R.id.bg_view);
+        if (Build.VERSION.SDK_INT >= 31) {
+            bg.setRenderEffect(RenderEffect.createBlurEffect(28f, 28f, Shader.TileMode.CLAMP));
+        }
 
         findViewById(R.id.copy_btn).setOnClickListener(v -> copyApiUrl());
         findViewById(R.id.add_btn).setOnClickListener(v -> showAddDialog());
         testBtn.setOnClickListener(v -> toggleTestRing());
+        defaultSoundChip.setOnClickListener(v -> cycleDefaultSound());
 
         exactBtn.setOnClickListener(v -> requestExactAlarm());
         if (Build.VERSION.SDK_INT >= 31) {
@@ -92,6 +103,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         refreshStatus();
+        refreshDefaultChip();
         rebuild();
         poller.post(poll);
     }
@@ -108,19 +120,33 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
-    // ------------------------------------------------------------ 状态卡
+    // ------------------------------------------------------------ 状态条 / 默认铃声
 
     private void refreshStatus() {
         boolean up = ApiService.running;
         statusDot.setVisibility(up ? View.VISIBLE : View.INVISIBLE);
-        statusTitle.setText(up ? "API 服务运行中 · 已处理 " + ApiService.servedCount() + " 次请求"
-                : "API 服务未运行" + (ApiService.lastError.isEmpty() ? "" : "（" + ApiService.lastError + "）"));
-        statusText.setText("API   http://" + ApiService.lanIps() + ":" + ApiService.PORT + "\n"
-                + "token " + Token.get(this) + "\n"
-                + "响铃  " + (RingService.RINGING
-                        ? "正在响 · " + SoundCatalog.find(RingService.RING_SOUND).name
-                        : "空闲"));
+        statusTitle.setText(up ? "API 运行中 · 已处理 " + ApiService.servedCount() + " 次"
+                : "API 未运行" + (ApiService.lastError.isEmpty() ? "" : "（" + ApiService.lastError + "）"));
+        String ip = ApiService.lanIps().split(" / ")[0];
+        statusText.setText(ip + ":" + ApiService.PORT + " · token " + Token.get(this)
+                + (RingService.RINGING ? " · 正在响 " + SoundCatalog.find(RingService.RING_SOUND).name : ""));
         testBtn.setText(RingService.RINGING ? "停止响铃" : "测试响铃");
+    }
+
+    private void refreshDefaultChip() {
+        defaultSoundChip.setText("默认铃声 " + SoundCatalog.find(SoundCatalog.defaultKey(this)).name + " ▸");
+    }
+
+    private void cycleDefaultSound() {
+        int idx = 0;
+        String cur = SoundCatalog.defaultKey(this);
+        for (int i = 0; i < SoundCatalog.ALL.size(); i++) {
+            if (SoundCatalog.ALL.get(i).key.equals(cur)) { idx = i; break; }
+        }
+        SoundCatalog.Item next = SoundCatalog.ALL.get((idx + 1) % SoundCatalog.ALL.size());
+        SoundCatalog.setDefaultKey(this, next.key);
+        refreshDefaultChip();
+        Toast.makeText(this, "新闹钟默认用 " + next.name, Toast.LENGTH_SHORT).show();
     }
 
     private void copyApiUrl() {
@@ -163,7 +189,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    // ------------------------------------------------------------ 闹钟列表
+    // ------------------------------------------------------------ 单行闹钟卡
 
     private void rebuild() {
         listContainer.removeAllViews();
@@ -178,7 +204,7 @@ public class MainActivity extends Activity {
         sb.append(repeatDesc(a)).append(" · ").append(SoundCatalog.find(a.sound).name);
         long next = AlarmStore.nextTrigger(a);
         if (next > 0) {
-            sb.append(" · 下次 ").append(new java.text.SimpleDateFormat(
+            sb.append(" · ").append(new java.text.SimpleDateFormat(
                     "MM-dd HH:mm", java.util.Locale.CHINA).format(new java.util.Date(next)));
         }
         return sb.toString();
@@ -196,33 +222,38 @@ public class MainActivity extends Activity {
     }
 
     private View buildRow(final AlarmStore.Alarm a) {
+        int textMain = getColor(R.color.glass_text);
+        int textSub = getColor(R.color.glass_sub);
+
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setBackgroundResource(R.drawable.bg_card);
+        row.setBackgroundResource(R.drawable.bg_glass);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.topMargin = dp(10);
+        lp.topMargin = dp(8);
         row.setLayoutParams(lp);
-        row.setPadding(dp(18), dp(14), dp(12), dp(14));
-
-        LinearLayout col = new LinearLayout(this);
-        col.setOrientation(LinearLayout.VERTICAL);
-        row.addView(col, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        row.setPadding(dp(14), dp(10), dp(8), dp(10));
 
         TextView time = new TextView(this);
         time.setText(String.format("%02d:%02d", a.hour, a.minute));
-        time.setTextSize(30);
+        time.setTextSize(21);
         time.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        time.setTextColor(a.enabled ? 0xFF1B1D2A : 0xFF8A90A6);
-        col.addView(time);
+        time.setTextColor(a.enabled ? textMain : textSub);
+        time.setMinWidth(dp(66));
+        row.addView(time);
 
         TextView sub = new TextView(this);
         sub.setText(subText(a));
-        sub.setTextSize(12);
-        sub.setTextColor(0xFF8A90A6);
-        sub.setPadding(0, dp(3), 0, 0);
-        col.addView(sub);
+        sub.setTextSize(11.5f);
+        sub.setTextColor(textSub);
+        sub.setSingleLine(true);
+        sub.setEllipsize(TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams subLp = new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        subLp.leftMargin = dp(10);
+        subLp.rightMargin = dp(6);
+        row.addView(sub, subLp);
 
         Switch sw = new Switch(this);
         sw.setChecked(a.enabled);
@@ -239,9 +270,9 @@ public class MainActivity extends Activity {
 
         TextView del = new TextView(this);
         del.setText("✕");
-        del.setTextSize(16);
-        del.setTextColor(0xFF8A90A6);
-        del.setPadding(dp(14), dp(10), dp(6), dp(10));
+        del.setTextSize(15);
+        del.setTextColor(textSub);
+        del.setPadding(dp(12), dp(8), dp(6), dp(8));
         del.setOnClickListener(v -> {
             AlarmStore.delete(MainActivity.this, a.id);
             rebuild();
@@ -251,13 +282,18 @@ public class MainActivity extends Activity {
         return row;
     }
 
-    // ------------------------------------------------------------ 添加对话框
+    // ------------------------------------------------------------ 添加对话框（玻璃卡）
 
     private void showAddDialog() {
+        int textMain = getColor(R.color.glass_text);
         Calendar dflt = Calendar.getInstance();
         dflt.add(Calendar.HOUR_OF_DAY, 1);
         final int[] picked = {dflt.get(Calendar.HOUR_OF_DAY), dflt.get(Calendar.MINUTE)};
-        final int[] soundIdx = {0}; // SoundCatalog.ALL 下标
+        final int[] soundIdx = {0};
+        String defKey = SoundCatalog.defaultKey(this);
+        for (int i = 0; i < SoundCatalog.ALL.size(); i++) {
+            if (SoundCatalog.ALL.get(i).key.equals(defKey)) { soundIdx[0] = i; break; }
+        }
 
         releasePreview();
         final Dialog dialog = new Dialog(this);
@@ -265,27 +301,27 @@ public class MainActivity extends Activity {
 
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackgroundResource(R.drawable.bg_dialog);
-        int pad = dp(22);
+        card.setBackgroundResource(R.drawable.bg_glass);
+        int pad = dp(20);
         card.setPadding(pad, pad, pad, pad);
 
         TextView title = new TextView(this);
         title.setText("新闹钟");
-        title.setTextSize(18);
+        title.setTextSize(17);
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        title.setTextColor(0xFF1B1D2A);
+        title.setTextColor(textMain);
         card.addView(title);
 
         final TextView timeBtn = new TextView(this);
         timeBtn.setText(String.format("%02d:%02d", picked[0], picked[1]));
-        timeBtn.setTextSize(42);
+        timeBtn.setTextSize(38);
         timeBtn.setTypeface(Typeface.MONOSPACE);
         timeBtn.setGravity(Gravity.CENTER);
-        timeBtn.setTextColor(0xFF1B1D2A);
-        timeBtn.setBackgroundResource(R.drawable.bg_chip_off);
+        timeBtn.setTextColor(textMain);
+        timeBtn.setBackgroundResource(R.drawable.bg_glass_chip);
         LinearLayout.LayoutParams timeLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        timeLp.topMargin = dp(14);
+        timeLp.topMargin = dp(12);
         card.addView(timeBtn, timeLp);
         timeBtn.setOnClickListener(v -> new TimePickerDialog(MainActivity.this, (tp, h, m) -> {
             picked[0] = h;
@@ -293,7 +329,7 @@ public class MainActivity extends Activity {
             timeBtn.setText(String.format("%02d:%02d", h, m));
         }, picked[0], picked[1], true).show());
 
-        card.addView(caption("重复（不选 = 一次性）"));
+        card.addView(caption("重复（不选 = 一次性）", textMain));
 
         final TextView[] dayChips = new TextView[7];
         LinearLayout daysRow = new LinearLayout(this);
@@ -306,16 +342,16 @@ public class MainActivity extends Activity {
             chip.setGravity(Gravity.CENTER);
             chip.setOnClickListener(v -> {
                 chip.setSelected(!chip.isSelected());
-                styleDayChip(chip);
+                styleDayChip(chip, textMain);
             });
-            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(0, dp(34), 1f);
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(0, dp(32), 1f);
             if (i > 0) clp.leftMargin = dp(6);
             daysRow.addView(chip, clp);
             dayChips[i] = chip;
         }
         card.addView(daysRow);
 
-        card.addView(caption("铃声"));
+        card.addView(caption("铃声", textMain));
 
         LinearLayout soundRow = new LinearLayout(this);
         soundRow.setOrientation(LinearLayout.HORIZONTAL);
@@ -324,16 +360,16 @@ public class MainActivity extends Activity {
         final TextView soundName = new TextView(this);
         soundName.setTextSize(14);
         soundName.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        soundName.setTextColor(0xFF1B1D2A);
+        soundName.setTextColor(textMain);
         soundRow.addView(soundName, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-        TextView previewBtn = pill("▶ 试听", R.drawable.bg_chip_off, 0xFF1B1D2A);
+        TextView previewBtn = pill("▶ 试听", R.drawable.bg_glass_chip, textMain);
         previewBtn.setOnClickListener(v ->
                 previewSound(SoundCatalog.ALL.get(soundIdx[0]).resId));
         soundRow.addView(previewBtn, pillLp());
 
-        TextView nextBtn = pill("换一个", R.drawable.bg_chip_off, 0xFF1B1D2A);
+        TextView nextBtn = pill("换一个", R.drawable.bg_glass_chip, textMain);
         nextBtn.setOnClickListener(v -> {
             soundIdx[0] = (soundIdx[0] + 1) % SoundCatalog.ALL.size();
             soundName.setText(SoundCatalog.ALL.get(soundIdx[0]).name);
@@ -343,23 +379,23 @@ public class MainActivity extends Activity {
         nlp.leftMargin = dp(8);
         soundRow.addView(nextBtn, nlp);
 
-        soundName.setText(SoundCatalog.ALL.get(0).name);
+        soundName.setText(SoundCatalog.ALL.get(soundIdx[0]).name);
         card.addView(soundRow);
 
         LinearLayout btns = new LinearLayout(this);
         btns.setOrientation(LinearLayout.HORIZONTAL);
         LinearLayout.LayoutParams btnsLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        btnsLp.topMargin = dp(20);
+        btnsLp.topMargin = dp(18);
 
-        TextView cancel = pill("取消", R.drawable.bg_pill_ghost, 0xFF1B1D2A);
+        TextView cancel = pill("取消", R.drawable.bg_glass_chip, textMain);
         cancel.setOnClickListener(v -> {
             releasePreview();
             dialog.dismiss();
         });
-        btns.addView(cancel, new LinearLayout.LayoutParams(0, dp(46), 1f));
+        btns.addView(cancel, new LinearLayout.LayoutParams(0, dp(42), 1f));
 
-        TextView save = pill("保存", R.drawable.bg_pill_primary, 0xFFFFFFFF);
+        TextView save = pill("保存", R.drawable.bg_cta, getColor(R.color.cta_text));
         save.setOnClickListener(v -> {
             AlarmStore.Alarm a = new AlarmStore.Alarm();
             a.hour = picked[0];
@@ -372,7 +408,7 @@ public class MainActivity extends Activity {
             dialog.dismiss();
             rebuild();
         });
-        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(0, dp(46), 1f);
+        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(0, dp(42), 1f);
         slp.leftMargin = dp(10);
         btns.addView(save, slp);
         card.addView(btns, btnsLp);
@@ -387,12 +423,12 @@ public class MainActivity extends Activity {
         dialog.show();
     }
 
-    private TextView caption(String text) {
+    private TextView caption(String text, int color) {
         TextView tv = new TextView(this);
         tv.setText(text);
-        tv.setTextSize(12);
-        tv.setTextColor(0xFF8A90A6);
-        tv.setPadding(0, dp(18), 0, dp(8));
+        tv.setTextSize(11.5f);
+        tv.setTextColor(getColor(R.color.glass_sub));
+        tv.setPadding(0, dp(14), 0, dp(7));
         return tv;
     }
 
@@ -409,13 +445,13 @@ public class MainActivity extends Activity {
 
     private LinearLayout.LayoutParams pillLp() {
         return new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, dp(34));
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(32));
     }
 
-    private void styleDayChip(TextView chip) {
+    private void styleDayChip(TextView chip, int textMain) {
         boolean on = chip.isSelected();
-        chip.setBackgroundResource(on ? R.drawable.bg_chip_on : R.drawable.bg_chip_off);
-        chip.setTextColor(on ? 0xFFFFFFFF : 0xFF8A90A6);
+        chip.setBackgroundResource(on ? R.drawable.bg_chip_on : R.drawable.bg_glass_chip);
+        chip.setTextColor(on ? getColor(R.color.cta_text) : getColor(R.color.glass_sub));
         chip.setTypeface(on ? Typeface.create("sans-serif-medium", Typeface.NORMAL)
                 : Typeface.DEFAULT);
     }

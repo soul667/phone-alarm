@@ -112,7 +112,7 @@ public class AlarmStore {
         if (patch.has("sound")) {
             String s = patch.getString("sound");
             if (!SoundCatalog.isValid(s)) throw new IllegalArgumentException(
-                    "sound 须为: system/nuke/siren/klaxon/pulse/birds 之一");
+                    "sound 须为: system/nuke/siren/klaxon/pulse/birds/epic/rock 之一");
             found.sound = s;
         }
         if (patch.has("enabled")) found.enabled = patch.getBoolean("enabled");

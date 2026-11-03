@@ -19,9 +19,9 @@
 | | 功能 | 说明 |
 |---|---|---|
 | ⏰ | 精确闹钟 | `AlarmManager.setAlarmClock`，Doze 下也准点；重复闹钟自动排下一次，一次性响后自动关闭 |
-| 🔊 | 内置爆炸系铃声 | 程序合成 5 款：💥核爆 / 🚨防空警报 / 🚢舰船警报 / ⚡紧急脉冲 / 🐦晨间鸟鸣，按闹钟独立选择 |
+| 🔊 | 内置铃声 7 款 | 程序合成 5 款（💥核爆/🚨防空/🚢舰船/⚡脉冲/🐦鸟鸣）+ 用户自带 2 款（🥁史诗鼓点/🎸运动摇滚），按闹钟独立选择，支持设置全局默认 |
 | 💬 | 响铃大字消息 | 响铃全屏显示 agent 下发的文字 + 日期 + 双圈脉冲动画，锁屏亮屏可见 |
-| 🌓 | 现代 UI | 深色模式自适应、圆角卡片、星期芯片、FAB、圆角对话框、铃声试听 |
+| 🌓 | 玻璃拟态 UI | 磨砂渐变网格背景（API 31+ 真模糊）+ 半透明玻璃卡片，单行紧凑布局，深浅双主题，铃声试听 |
 | 🤖 | MCP 9 工具 | 建钟/列表/修改/开关/删除/立即响/停止/状态/连通性测试，agent 开箱即用 |
 | 🩹 | 崩溃自报 | 任何未捕获异常存栈，下次启动直接展示 + 一键复制，永不"盲闪退" |
 | 🔁 | 自愈能力 | 开机/升级自恢复调度与 API；电池优化白名单指引 |
@@ -70,16 +70,17 @@ ZCode 配置（`mcp.servers`）：
 | 工具 | 说明 |
 |---|---|
 | `phone_ping` | 连通性测试（免 token，返回设备名/闹钟数） |
-| `phone_set_alarm(hour, minute, label, days?, sound?)` | 建闹钟；`days` 1=周一…7=周日（`[1,2,3,4,5]`=工作日，不传=一次性）；`sound` 见下表 |
+| `phone_set_alarm(hour, minute, label, days?, sound?)` | 建闹钟；`days` 1=周一…7=周日（`[1,2,3,4,5]`=工作日，不传=一次性）；不传 `sound` 用 App 默认铃声 |
 | `phone_list_alarms` | 列出全部（时间/标签/重复/铃声/开关/下次响铃） |
 | `phone_update_alarm(alarm_id, ...)` | 按 id 改任意字段（`days=[]` 表示改一次性） |
 | `phone_toggle_alarm(alarm_id)` | 开/关切换 |
 | `phone_delete_alarm(alarm_id)` | 删除 |
 | `phone_ring_now(message?, sound?="nuke")` | **立即响铃**（找手机/即时提醒），默认核爆 |
 | `phone_stop_ring` | 停止响铃 |
+| `phone_set_default_sound(sound)` | 设置 App 默认铃声（App 新建与 `phone_set_alarm` 不传 sound 时的缺省） |
 | `phone_status` | 在线状态/是否响铃中/下次响铃 |
 
-**铃声 `sound`**：`system` 系统闹钟 · `nuke` 💥核爆 · `siren` 🚨防空警报 · `klaxon` 🚢舰船警报 · `pulse` ⚡紧急脉冲 · `birds` 🐦晨间鸟鸣
+**铃声 `sound`**：`system` 系统闹钟 · `nuke` 💥核爆 · `siren` 🚨防空警报 · `klaxon` 🚢舰船警报 · `pulse` ⚡紧急脉冲 · `birds` 🐦晨间鸟鸣 · `epic` 🥁史诗鼓点 · `rock` 🎸运动摇滚
 
 ## 🔌 HTTP API（App 内嵌，可 curl）
 
@@ -95,6 +96,8 @@ POST   /api/alarms/{id}              部分更新（同上字段任意子集）
 POST   /api/alarms/{id}/toggle       开关
 DELETE /api/alarms/{id}              删除
 POST   /api/ring                     {"message":"文字","sound":"siren"} 立即响铃
+GET    /api/settings                 查询默认铃声
+POST   /api/settings                 {"default_sound":"epic"} 设置默认铃声
 POST   /api/stop                     停止响铃
 ```
 
@@ -107,6 +110,8 @@ POST   /api/stop                     停止响铃
 - `klaxon`：310/240Hz 交替锯齿波 ah-ooh-gah
 - `pulse`：1.2kHz 加速蜂鸣串
 - `birds`：FM 啁啾组（温和款，怕被核爆吵醒的话）
+
+另外两款来自用户挑选的无版权音频（`epic` 史诗鼓点 92s / `rock` 运动摇滚），ffmpeg 转 96kbps 单声道后打包进 `res/raw/`。
 
 ## 🏗️ 目录结构
 

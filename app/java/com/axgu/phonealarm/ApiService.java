@@ -198,8 +198,33 @@ public class ApiService extends Service {
                 JSONObject o = new JSONObject();
                 o.put("ok", true);
                 o.put("default_ring_now", SoundCatalog.DEFAULT_RING_NOW);
+                o.put("default_sound", SoundCatalog.defaultKey(this));
                 o.put("sounds", arr);
                 return HttpServer.Response.json(200, o.toString());
+            }
+            case "/api/settings": {
+                if ("GET".equals(req.method)) {
+                    JSONObject o = new JSONObject();
+                    o.put("ok", true);
+                    o.put("default_sound", SoundCatalog.defaultKey(this));
+                    return HttpServer.Response.json(200, o.toString());
+                }
+                if ("POST".equals(req.method)) {
+                    JSONObject body = new JSONObject(req.body);
+                    if (!body.has("default_sound")) {
+                        return HttpServer.Response.json(400, err("缺少 default_sound"));
+                    }
+                    String s = body.getString("default_sound");
+                    if (!SoundCatalog.isValid(s)) {
+                        return HttpServer.Response.json(400, err("default_sound 须为: system/nuke/siren/klaxon/pulse/birds/epic/rock 之一"));
+                    }
+                    SoundCatalog.setDefaultKey(this, s);
+                    JSONObject o = new JSONObject();
+                    o.put("ok", true);
+                    o.put("default_sound", s);
+                    return HttpServer.Response.json(200, o.toString());
+                }
+                return HttpServer.Response.json(405, err("method not allowed"));
             }
         }
 
@@ -282,9 +307,11 @@ public class ApiService extends Service {
         if (body.has("sound")) {
             String s = body.getString("sound");
             if (!SoundCatalog.isValid(s)) {
-                return HttpServer.Response.json(400, err("sound 须为: system/nuke/siren/klaxon/pulse/birds 之一"));
+                return HttpServer.Response.json(400, err("sound 须为: system/nuke/siren/klaxon/pulse/birds/epic/rock 之一"));
             }
             a.sound = s;
+        } else {
+            a.sound = SoundCatalog.defaultKey(this); // 不指定就用 App 里设的默认铃声
         }
         if (body.has("days")) {
             boolean[] d = new boolean[7];
