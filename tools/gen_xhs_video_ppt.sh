@@ -47,9 +47,8 @@ echo "durations: ${DURS[*]} total=$TOTAL"
 echo "[4/5] 逐页视频段（轻推镜）"
 for i in 1 2 3 4 5; do
   D=${DURS[$((i-1))]}
-  FRAMES=$(python3 -c "print(int($D * 30))")
-  ffmpeg -y -v error -loop 1 -i "$TMP/slide-$i.png" \
-    -vf "scale=1080:1920,zoompan=z='min(zoom+0.00035,1.06)':d=$FRAMES:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30" \
+  ffmpeg -y -v error -loop 1 -framerate 30 -i "$TMP/slide-$i.png" \
+    -vf "scale=1080:1920" \
     -t "$D" -r 30 -pix_fmt yuv420p "$TMP/seg$i.mp4"
 done
 printf "file '%s.mp4'\n" "$TMP/seg1" "$TMP/seg2" "$TMP/seg3" "$TMP/seg4" "$TMP/seg5" > "$TMP/list.txt"
@@ -60,8 +59,8 @@ VDELAY=""
 for i in 1 2 3 4 5; do VDELAY+="[$i:a]adelay=${OFFSETS[$((i-1))]}s:all=1[a$i];"; done
 ffmpeg -y -v error -i "$TMP/video_nosound.mp4" \
   -i "$TMP/v1.mp3" -i "$TMP/v2.mp3" -i "$TMP/v3.mp3" -i "$TMP/v4.mp3" -i "$TMP/v5.mp3" \
-  -i "$ROOT/app/res/raw/alarm_epic.mp3" \
-  -filter_complex "${VDELAY}[6:a]atrim=0:${TOTAL},asetpts=PTS-STARTPTS,volume=0.22,afade=t=out:st=$(python3 -c "print($TOTAL-1.6)"):d=1.6[bg];[a1][a2][a3][a4][a5][bg]amix=inputs=6:duration=longest:normalize=0,volume=1.6,alimiter=limit=0.95[aout]" \
+  -i "$ROOT/docs/video/bgm_soft.wav" \
+  -filter_complex "${VDELAY}[6:a]atrim=0:${TOTAL},asetpts=PTS-STARTPTS,volume=0.5,afade=t=out:st=$(python3 -c "print($TOTAL-1.6)"):d=1.6[bg];[a1][a2][a3][a4][a5][bg]amix=inputs=6:duration=longest:normalize=0,volume=1.6,alimiter=limit=0.95[aout]" \
   -map 0:v -map "[aout]" -t "$TOTAL" -c:v copy -c:a aac -b:a 128k -movflags +faststart "$V/xhs_ppt.mp4"
 
 # 封面
