@@ -1,6 +1,6 @@
 {
   "_说明": "把手机 App 主页显示的 IP 和 token 填到下面；host 留空时 MCP 工具会提示先配置",
-  "host": "10.24.61.198",
+  "host": "",
   "port": 8787,
-  "token": "04d81ceaa4e907ae"
+  "token": ""
 }

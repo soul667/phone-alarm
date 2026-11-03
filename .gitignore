@@ -4,3 +4,4 @@ debug.keystore
 __pycache__/
 *.pyc
 .DS_Store
+mcp/config.json
