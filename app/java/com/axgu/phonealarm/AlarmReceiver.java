@@ -23,12 +23,13 @@ public class AlarmReceiver extends BroadcastReceiver {
         if (label == null) label = "";
 
         String sound = "system";
+        boolean speak = true;
         for (AlarmStore.Alarm a : AlarmStore.load(context)) {
-            if (a.id == id) { sound = a.sound; break; }
+            if (a.id == id) { sound = a.sound; speak = a.tts; break; }
         }
 
         AlarmStore.onFired(context, id); // 先排下一次 / 关一次性，再响
-        RingService.start(context, label, sound);
+        RingService.start(context, label, sound, speak);
         try {
             Intent ui = new Intent(context, RingActivity.class);
             ui.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

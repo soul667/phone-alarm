@@ -128,22 +128,25 @@ public class MainActivity extends Activity {
         statusTitle.setText(up ? "API 运行中 · 已处理 " + ApiService.servedCount() + " 次"
                 : "API 未运行" + (ApiService.lastError.isEmpty() ? "" : "（" + ApiService.lastError + "）"));
         String ip = ApiService.lanIps().split(" / ")[0];
-        statusText.setText(ip + ":" + ApiService.PORT + " · token " + Token.get(this)
-                + (RingService.RINGING ? " · 正在响 " + SoundCatalog.find(RingService.RING_SOUND).name : ""));
+        String token = Token.get(this);
+        String masked = token.length() > 6 ? token.substring(0, 6) + "…" : token; // 截图分享不泄漏；复制按钮给全量
+        statusText.setText(ip + ":" + ApiService.PORT + " · token " + masked
+                + (RingService.RINGING ? " · 正在响 " + SoundCatalog.find(this, RingService.RING_SOUND).name : ""));
         testBtn.setText(RingService.RINGING ? "停止响铃" : "测试响铃");
     }
 
     private void refreshDefaultChip() {
-        defaultSoundChip.setText("默认铃声 " + SoundCatalog.find(SoundCatalog.defaultKey(this)).name + " ▸");
+        defaultSoundChip.setText("默认铃声 " + SoundCatalog.find(this, SoundCatalog.defaultKey(this)).name + " ▸");
     }
 
     private void cycleDefaultSound() {
         int idx = 0;
         String cur = SoundCatalog.defaultKey(this);
-        for (int i = 0; i < SoundCatalog.ALL.size(); i++) {
-            if (SoundCatalog.ALL.get(i).key.equals(cur)) { idx = i; break; }
+        java.util.List<SoundCatalog.Item> catalog = SoundCatalog.all(this);
+        for (int i = 0; i < catalog.size(); i++) {
+            if (catalog.get(i).key.equals(cur)) { idx = i; break; }
         }
-        SoundCatalog.Item next = SoundCatalog.ALL.get((idx + 1) % SoundCatalog.ALL.size());
+        SoundCatalog.Item next = SoundCatalog.all(this).get((idx + 1) % SoundCatalog.all(this).size());
         SoundCatalog.setDefaultKey(this, next.key);
         refreshDefaultChip();
         Toast.makeText(this, "新闹钟默认用 " + next.name, Toast.LENGTH_SHORT).show();
@@ -201,7 +204,7 @@ public class MainActivity extends Activity {
     private String subText(AlarmStore.Alarm a) {
         StringBuilder sb = new StringBuilder();
         if (a.label != null && !a.label.isEmpty()) sb.append(a.label).append(" · ");
-        sb.append(repeatDesc(a)).append(" · ").append(SoundCatalog.find(a.sound).name);
+        sb.append(repeatDesc(a)).append(" · ").append(SoundCatalog.find(this, a.sound).name);
         long next = AlarmStore.nextTrigger(a);
         if (next > 0) {
             sb.append(" · ").append(new java.text.SimpleDateFormat(
@@ -291,8 +294,9 @@ public class MainActivity extends Activity {
         final int[] picked = {dflt.get(Calendar.HOUR_OF_DAY), dflt.get(Calendar.MINUTE)};
         final int[] soundIdx = {0};
         String defKey = SoundCatalog.defaultKey(this);
-        for (int i = 0; i < SoundCatalog.ALL.size(); i++) {
-            if (SoundCatalog.ALL.get(i).key.equals(defKey)) { soundIdx[0] = i; break; }
+        java.util.List<SoundCatalog.Item> catalog = SoundCatalog.all(this);
+        for (int i = 0; i < catalog.size(); i++) {
+            if (catalog.get(i).key.equals(defKey)) { soundIdx[0] = i; break; }
         }
 
         releasePreview();
@@ -366,20 +370,20 @@ public class MainActivity extends Activity {
 
         TextView previewBtn = pill("▶ 试听", R.drawable.bg_glass_chip, textMain);
         previewBtn.setOnClickListener(v ->
-                previewSound(SoundCatalog.ALL.get(soundIdx[0]).resId));
+                previewSound(SoundCatalog.all(this).get(soundIdx[0]).resId));
         soundRow.addView(previewBtn, pillLp());
 
         TextView nextBtn = pill("换一个", R.drawable.bg_glass_chip, textMain);
         nextBtn.setOnClickListener(v -> {
-            soundIdx[0] = (soundIdx[0] + 1) % SoundCatalog.ALL.size();
-            soundName.setText(SoundCatalog.ALL.get(soundIdx[0]).name);
-            previewSound(SoundCatalog.ALL.get(soundIdx[0]).resId);
+            soundIdx[0] = (soundIdx[0] + 1) % SoundCatalog.all(this).size();
+            soundName.setText(SoundCatalog.all(this).get(soundIdx[0]).name);
+            previewSound(SoundCatalog.all(this).get(soundIdx[0]).resId);
         });
         LinearLayout.LayoutParams nlp = pillLp();
         nlp.leftMargin = dp(8);
         soundRow.addView(nextBtn, nlp);
 
-        soundName.setText(SoundCatalog.ALL.get(soundIdx[0]).name);
+        soundName.setText(SoundCatalog.all(this).get(soundIdx[0]).name);
         card.addView(soundRow);
 
         LinearLayout btns = new LinearLayout(this);
@@ -401,7 +405,7 @@ public class MainActivity extends Activity {
             a.hour = picked[0];
             a.minute = picked[1];
             a.label = "";
-            a.sound = SoundCatalog.ALL.get(soundIdx[0]).key;
+            a.sound = SoundCatalog.all(this).get(soundIdx[0]).key;
             for (int i = 0; i < 7; i++) a.days[i] = dayChips[i].isSelected();
             AlarmStore.create(MainActivity.this, a);
             releasePreview();

@@ -6,8 +6,12 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
+
+import java.io.File;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -148,6 +152,8 @@ public class ApiService extends Service {
                 o.put("ringing", RingService.RINGING);
                 o.put("ring_message", RingService.RING_MESSAGE);
                 o.put("ring_sound", RingService.RING_SOUND);
+                o.put("tts_ready", SpeakManager.isReady());
+                o.put("audio_playing", audioPlayer != null);
                 long next = AlarmStore.nextTriggerAt(this);
                 o.put("next_ring", next);
                 if (next > 0) {
@@ -156,18 +162,88 @@ public class ApiService extends Service {
                 }
                 return HttpServer.Response.json(200, o.toString());
             }
+            case "/api/say": {
+                // 端侧 TTS 播报：agent 让手机直接"说话"（系统引擎，离线，走闹钟音量）
+                if (!"POST".equals(req.method)) return HttpServer.Response.json(405, err("method not allowed"));
+                String text;
+                boolean interrupt = true;
+                try {
+                    JSONObject body = new JSONObject(req.body);
+                    text = body.optString("text", "").trim();
+                    if (body.has("interrupt")) interrupt = body.optBoolean("interrupt", true);
+                } catch (Exception e) {
+                    text = req.body == null ? "" : req.body.trim();
+                }
+                if (text.isEmpty()) return HttpServer.Response.json(400, err("text 不能为空"));
+                if (text.length() > 500) text = text.substring(0, 500);
+                final String t = text;
+                final boolean itp = interrupt;
+                SpeakManager.ensure(this, ok -> {
+                    if (ok) SpeakManager.speak(t, itp);
+                });
+                JSONObject o = new JSONObject();
+                o.put("ok", true);
+                o.put("tts_ready", SpeakManager.isReady());
+                o.put("hint", SpeakManager.isReady() ? "正在播报"
+                        : "TTS 引擎初始化中，文本已排队，稍后自动播报");
+                return HttpServer.Response.json(200, o.toString());
+            }
+            case "/api/audio": {
+                // agent 上传自产音频（mp3/wav/ogg）：?name=xxx&save=1 存为自定义铃声，&play=1 立即播放
+                if (!"POST".equals(req.method)) return HttpServer.Response.json(405, err("method not allowed"));
+                if (req.bodyBytes == null || req.bodyBytes.length == 0) {
+                    return HttpServer.Response.json(400, err("body 为空：请用 --data-binary 上传音频原始字节"));
+                }
+                boolean save = "1".equals(req.param("save"));
+                boolean play = "1".equals(req.param("play"));
+                String name = req.param("name");
+                File target;
+                String key;
+                if (save) {
+                    if (name == null || !name.matches("[\\w\\u4e00-\\u9fa5-]{1,32}")) {
+                        return HttpServer.Response.json(400,
+                                err("save=1 时 name 必填且只能含中英文/数字/_-，长度1-32"));
+                    }
+                    target = new File(SoundCatalog.audioDir(this), name + SoundCatalog.EXT);
+                    try (java.io.FileOutputStream fo = new java.io.FileOutputStream(target)) {
+                        fo.write(req.bodyBytes);
+                    }
+                    key = SoundCatalog.CUSTOM_PREFIX + name;
+                } else {
+                    target = new File(getCacheDir(), "api_audio_play." + SoundCatalog.EXT);
+                    try (java.io.FileOutputStream fo = new java.io.FileOutputStream(target)) {
+                        fo.write(req.bodyBytes);
+                    }
+                    key = "";
+                }
+                String played = "no";
+                if (play) {
+                    played = playFile(target) ? "started" : "failed";
+                }
+                JSONObject o = new JSONObject();
+                o.put("ok", true);
+                if (save) {
+                    o.put("saved", key);
+                    o.put("hint", "可用 sound=\"" + key + "\" 用于闹钟/响铃");
+                }
+                o.put("played", played);
+                o.put("bytes", req.bodyBytes.length);
+                return HttpServer.Response.json(200, o.toString());
+            }
             case "/api/ring": {
                 if (!"POST".equals(req.method)) return HttpServer.Response.json(405, err("method not allowed"));
                 String msg = "";
                 String sound = SoundCatalog.DEFAULT_RING_NOW;
+                boolean speak = true;
                 try {
                     JSONObject body = new JSONObject(req.body);
                     msg = body.optString("message", "");
-                    if (body.has("sound") && SoundCatalog.isValid(body.getString("sound"))) {
+                    if (body.has("sound") && SoundCatalog.isValid(this, body.getString("sound"))) {
                         sound = body.getString("sound");
                     }
+                    if (body.has("speak")) speak = body.optBoolean("speak", true);
                 } catch (Exception ignored) { }
-                RingService.start(this, msg, sound);
+                RingService.start(this, msg, sound, speak);
                 try {
                     Intent ui = new Intent(this, RingActivity.class);
                     ui.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -189,7 +265,7 @@ public class ApiService extends Service {
             case "/api/sounds": {
                 if (!"GET".equals(req.method)) return HttpServer.Response.json(405, err("method not allowed"));
                 JSONArray arr = new JSONArray();
-                for (SoundCatalog.Item it : SoundCatalog.ALL) {
+                for (SoundCatalog.Item it : SoundCatalog.all(this)) {
                     JSONObject s = new JSONObject();
                     s.put("key", it.key);
                     s.put("name", it.name);
@@ -215,7 +291,7 @@ public class ApiService extends Service {
                         return HttpServer.Response.json(400, err("缺少 default_sound"));
                     }
                     String s = body.getString("default_sound");
-                    if (!SoundCatalog.isValid(s)) {
+                    if (!SoundCatalog.isValid(this, s)) {
                         return HttpServer.Response.json(400, err("default_sound 须为: system/nuke/siren/klaxon/pulse/birds/epic/rock 之一"));
                     }
                     SoundCatalog.setDefaultKey(this, s);
@@ -306,13 +382,14 @@ public class ApiService extends Service {
         a.enabled = body.optBoolean("enabled", true);
         if (body.has("sound")) {
             String s = body.getString("sound");
-            if (!SoundCatalog.isValid(s)) {
-                return HttpServer.Response.json(400, err("sound 须为: system/nuke/siren/klaxon/pulse/birds/epic/rock 之一"));
+            if (!SoundCatalog.isValid(this, s)) {
+                return HttpServer.Response.json(400, err("sound 须为内置铃声 key 或 custom:名字（先 /api/audio?save=1 上传）。GET /api/sounds 可查全部"));
             }
             a.sound = s;
         } else {
             a.sound = SoundCatalog.defaultKey(this); // 不指定就用 App 里设的默认铃声
         }
+        if (body.has("tts")) a.tts = body.optBoolean("tts", true);
         if (body.has("days")) {
             boolean[] d = new boolean[7];
             JSONArray arr = body.getJSONArray("days");
@@ -329,5 +406,42 @@ public class ApiService extends Service {
 
     private static String err(String msg) {
         return "{\"error\":" + HttpServer.jsonString(msg) + "}";
+    }
+
+    // ------------------------------------------------------------ 独立音频播放（/api/audio play=1）
+
+    private static MediaPlayer audioPlayer;
+
+    /** 在闹钟音量通道播放文件；返回是否成功启动。 */
+    private boolean playFile(File f) {
+        stopAudioPlayer();
+        try {
+            MediaPlayer p = new MediaPlayer();
+            p.setAudioAttributes(new android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build());
+            p.setDataSource(this, Uri.fromFile(f));
+            p.setOnCompletionListener(mp -> {
+                mp.release();
+                if (audioPlayer == mp) audioPlayer = null;
+            });
+            p.prepare();
+            p.start();
+            audioPlayer = p;
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static void stopAudioPlayer() {
+        try {
+            if (audioPlayer != null) {
+                audioPlayer.stop();
+                audioPlayer.release();
+            }
+        } catch (Exception ignored) { }
+        audioPlayer = null;
     }
 }

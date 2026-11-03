@@ -21,6 +21,7 @@ public class HttpServer {
         public Map<String, String> query = new HashMap<>();
         public Map<String, String> headers = new HashMap<>();
         public String body = "";
+        public byte[] bodyBytes = new byte[0]; // 二进制上传（/api/audio）用
 
         public String param(String k) { return query.get(k); }
     }
@@ -125,10 +126,11 @@ public class HttpServer {
             }
 
             if (contentLen > 0) {
-                if (contentLen > 256 * 1024) contentLen = 256 * 1024;
+                if (contentLen > 16 * 1024 * 1024) contentLen = 16 * 1024 * 1024; // 音频上传上限 16MB
                 byte[] buf = new byte[contentLen];
                 int off = 0, n;
                 while (off < contentLen && (n = in.read(buf, off, contentLen - off)) >= 0) off += n;
+                req.bodyBytes = buf;
                 req.body = new String(buf, StandardCharsets.UTF_8);
             }
 

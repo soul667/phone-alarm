@@ -21,7 +21,8 @@ public class AlarmStore {
         public int hour;
         public int minute;
         public String label = "";
-        public String sound = "system"; // SoundCatalog key
+        public String sound = "system";      // SoundCatalog key（含 custom:xxx）
+        public boolean tts = true;           // 响铃时用端侧 TTS 朗读 label
         public boolean enabled = true;
         public boolean[] days = new boolean[7]; // [0]=周一 … [6]=周日；全 false = 一次性
 
@@ -33,6 +34,7 @@ public class AlarmStore {
                 o.put("minute", minute);
                 o.put("label", label == null ? "" : label);
                 o.put("sound", sound == null ? "system" : sound);
+                o.put("tts", tts);
                 o.put("enabled", enabled);
                 JSONArray d = new JSONArray();
                 for (int i = 0; i < 7; i++) if (days[i]) d.put(i + 1); // 1=周一 … 7=周日
@@ -41,14 +43,15 @@ public class AlarmStore {
             return o;
         }
 
-        public static Alarm fromJson(JSONObject o) {
+        public static Alarm fromJson(JSONObject o, Context c) {
             Alarm a = new Alarm();
             a.id = o.optLong("id", System.currentTimeMillis());
             a.hour = o.optInt("hour", 7);
             a.minute = o.optInt("minute", 0);
             a.label = o.optString("label", "");
-            a.sound = SoundCatalog.isValid(o.optString("sound", "system"))
+            a.sound = SoundCatalog.isValid(c, o.optString("sound", "system"))
                     ? o.optString("sound", "system") : "system";
+            a.tts = o.optBoolean("tts", true);
             a.enabled = o.optBoolean("enabled", true);
             JSONArray d = o.optJSONArray("days");
             if (d != null) {
@@ -72,7 +75,7 @@ public class AlarmStore {
         List<Alarm> out = new ArrayList<>();
         try {
             JSONArray arr = new JSONArray(prefs(c).getString(KEY_LIST, "[]"));
-            for (int i = 0; i < arr.length(); i++) out.add(Alarm.fromJson(arr.getJSONObject(i)));
+            for (int i = 0; i < arr.length(); i++) out.add(Alarm.fromJson(arr.getJSONObject(i), c));
         } catch (Exception ignored) { }
         return out;
     }
@@ -111,10 +114,11 @@ public class AlarmStore {
         if (patch.has("label")) found.label = patch.getString("label");
         if (patch.has("sound")) {
             String s = patch.getString("sound");
-            if (!SoundCatalog.isValid(s)) throw new IllegalArgumentException(
-                    "sound 须为: system/nuke/siren/klaxon/pulse/birds/epic/rock 之一");
+            if (!SoundCatalog.isValid(c, s)) throw new IllegalArgumentException(
+                    "sound 须为内置铃声 key 或 custom:名字（已上传的自定义铃声）");
             found.sound = s;
         }
+        if (patch.has("tts")) found.tts = patch.getBoolean("tts");
         if (patch.has("enabled")) found.enabled = patch.getBoolean("enabled");
         if (patch.has("days")) {
             boolean[] d = new boolean[7];

@@ -22,9 +22,10 @@
 | 🔊 | 内置铃声 7 款 | 程序合成 5 款（💥核爆/🚨防空/🚢舰船/⚡脉冲/🐦鸟鸣）+ 用户自带 2 款（🥁史诗鼓点/🎸运动摇滚），按闹钟独立选择，支持设置全局默认 |
 | 💬 | 响铃大字消息 | 响铃全屏显示 agent 下发的文字 + 日期 + 双圈脉冲动画，锁屏亮屏可见 |
 | 🌓 | 玻璃拟态 UI | 磨砂渐变网格背景（API 31+ 真模糊）+ 半透明玻璃卡片，单行紧凑布局，深浅双主题，铃声试听 |
-| 🤖 | MCP 9 工具 | 建钟/列表/修改/开关/删除/立即响/停止/状态/连通性测试，agent 开箱即用 |
+| 🤖 | MCP 12 工具 | 闹钟管理 + **AI 语音播报/语音铃声**，agent 开箱即用（Node 版内置轻量 TTS） |
 | 🩹 | 崩溃自报 | 任何未捕获异常存栈，下次启动直接展示 + 一键复制，永不"盲闪退" |
 | 🔁 | 自愈能力 | 开机/升级自恢复调度与 API；电池优化白名单指引 |
+| 🗣️ | AI 语音 | node 内置 TTS 合成中文语音推送到手机播放；可存为自定义铃声给任何闹钟用 |
 | 🧪 | 真机验证 | OnePlus PKR110 / Android 16 全链路实测（创建→调度→响铃→停止→清理） |
 
 ## 📸 界面
@@ -45,25 +46,26 @@ python3 -m http.server 8899      # 手机浏览器打开 http://<PC局域网IP>:
 
 安装后打开 App：授权「闹钟和提醒」（Android 12+）与通知权限 → 点「测试响铃」验收。
 
-### 2. 配置 MCP
+### 2. 配置 MCP（Node 版，含内置 TTS）
 
-把 App 主页显示的 IP 与 token 填入 `mcp/config.json`：
-
-```json
-{ "host": "192.168.x.x", "port": 8787, "token": "xxxxxxxxxxxxxxxx" }
+```bash
+cd mcp-node && npm install
+cp config.json config.json.bak 2>/dev/null; 
+# 把 App 主页显示的 IP 与 token 填入 mcp-node/config.json：
+# { "host": "192.168.x.x", "port": 8787, "token": "xxxxxxxxxxxxxxxx" }
 ```
 
 ZCode 配置（`mcp.servers`）：
 
 ```json
-"phone-alarm": {
-  "type": "stdio",
-  "command": "python3",
-  "args": ["/path/to/phone-alarm/mcp/phone_alarm_mcp.py"]
-}
+"phone-alarm": { "type": "stdio", "command": "node", "args": ["/path/to/phone-alarm/mcp-node/index.js"] }
 ```
 
-然后对 agent 说：「明早 7 点用核爆铃声叫我起床」。
+> 也有无 TTS 的纯 Python 版：`mcp/phone_alarm_mcp.py`（同样 12 工具，TTS 相关调用会提示改用 Node 版）。
+
+然后对 agent 说：「明早 7 点用核爆铃声叫我起床」或「用你自己的声音录一段叫早语音存为铃声」。
+
+**给别人用**：仓库 `skill/phone-alarm/SKILL.md` 是打包好的 agent skill，拷进对方的 skills 目录即可（含完整上手/配方/排障指南）。
 
 ## 🤖 MCP 工具
 
@@ -77,6 +79,8 @@ ZCode 配置（`mcp.servers`）：
 | `phone_delete_alarm(alarm_id)` | 删除 |
 | `phone_ring_now(message?, sound?="nuke")` | **立即响铃**（找手机/即时提醒），默认核爆 |
 | `phone_stop_ring` | 停止响铃 |
+| `phone_say(text, engine?="edge")` | 让手机说话：node 内置 TTS 合成→推送播放；`engine="phone"` 走手机系统端侧引擎（部分 ROM 不可用） |
+| `phone_tts(text, save_as, voice?, play?)` | AI 合成语音存为自定义铃声（`sound="custom:名字"` 可用于任何闹钟） |
 | `phone_set_default_sound(sound)` | 设置 App 默认铃声（App 新建与 `phone_set_alarm` 不传 sound 时的缺省） |
 | `phone_status` | 在线状态/是否响铃中/下次响铃 |
 
@@ -98,6 +102,8 @@ DELETE /api/alarms/{id}              删除
 POST   /api/ring                     {"message":"文字","sound":"siren"} 立即响铃
 GET    /api/settings                 查询默认铃声
 POST   /api/settings                 {"default_sound":"epic"} 设置默认铃声
+POST   /api/say                      {"text":"..."} 端侧 TTS 播报（需手机有可用 TTS 引擎）
+POST   /api/audio?name=x&save=1&play=1   上传音频原始字节：存为 custom:x 铃声 / 立即播放
 POST   /api/stop                     停止响铃
 ```
 
@@ -125,8 +131,27 @@ phone-alarm/
 ├── mcp/phone_alarm_mcp.py           # PC 侧 MCP server (FastMCP, stdio)
 ├── mcp/config.json                  # 手机 IP/port/token
 ├── tools/gen_sounds.py              # 铃声合成器
+├── tools/gen_xhs_video.sh           # 宣传视频渲染（ffmpeg 单条命令）
+├── skill/phone-alarm/SKILL.md       # 打包给其他用户的 agent skill
+├── docs/video/xhs_phone_alarm.mp4   # 小红书宣传视频（不入库）
 └── build.sh                         # 零 Gradle 构建脚本
 ```
+
+## 🗣️ AI 语音播报（TTS）
+
+三条路径，按场景选：
+
+| 路径 | 说明 | 适用 |
+|---|---|---|
+| **node 内置 TTS**（推荐） | MCP server 内嵌 `msedge-tts`（微软神经音色，中文自然，零模型下载），合成后经 `/api/audio` 推送手机、走闹钟音量播放 | `phone_say` / `phone_tts` |
+| 手机端侧系统 TTS | `/api/say` 走系统 `TextToSpeech`（完全离线）；**部分国产 ROM（实测 OnePlus 16）未开放标准 TTS 服务，会初始化失败** | 手机装有可用引擎时 |
+| 完全离线小模型 | PC 上跑 [KittenTTS](https://github.com/KittenML/KittenTTS)（~25MB onnx，英文音色）等本地推理，产物 curl 上传 `/api/audio?save=1` | 无网/自定义音色 |
+
+安全提示：App 状态卡对 token 做**掩码显示**（v1.8+），截图分享不泄漏；「复制 API」按钮才给全量。若旧版本截图曾泄漏 token，手机端 `pm clear com.axgu.phonealarm`（或重装）即可重新生成。
+
+## 🎬 宣传视频
+
+`bash tools/gen_xhs_video.sh` 一条命令用 ffmpeg 渲染 1080×1920 竖屏 18.5s（截图 Ken Burns + 文字卡 + 自合成 BGM），产物在 `docs/video/`（含封面图），可直接发小红书。
 
 ## 👥 贡献
 

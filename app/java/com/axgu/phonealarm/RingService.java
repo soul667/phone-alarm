@@ -28,17 +28,20 @@ public class RingService extends Service {
     public static volatile boolean RINGING = false;
     public static volatile String RING_MESSAGE = "";
     public static volatile String RING_SOUND = "system";
+    public static volatile boolean RING_SPEAK = true;
     public static volatile long RING_START_AT = 0;
     private static volatile RingService instance = null;
 
     private static final long MAX_RING_MS = 5 * 60 * 1000L;
     private static final long WAKELOCK_MS = MAX_RING_MS + 30 * 1000L;
+    private static final long SPEAK_INTERVAL_MS = 30 * 1000L;
 
     private MediaPlayer player;
     private Vibrator vibrator;
     private PowerManager.WakeLock wakeLock;
     private final Handler handler = new Handler();
     private final Runnable autoStop = this::stopRingInternal;
+    private final Runnable speakLoop = this::speakOnce;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -60,12 +63,15 @@ public class RingService extends Service {
         }
         String msg = intent != null ? intent.getStringExtra("message") : null;
         String sound = intent != null ? intent.getStringExtra("sound") : null;
+        boolean speak = intent == null || intent.getBooleanExtra("speak", true);
         startRingForeground(msg == null ? "" : msg);
         RINGING = true;
         RING_MESSAGE = msg == null ? "" : msg;
         RING_SOUND = sound == null ? "system" : sound;
+        RING_SPEAK = speak;
         RING_START_AT = System.currentTimeMillis();
         playSound();
+        startSpeaking();
         handler.removeCallbacks(autoStop);
         handler.postDelayed(autoStop, MAX_RING_MS);
         return START_STICKY;
@@ -78,12 +84,34 @@ public class RingService extends Service {
     }
 
     public static void start(Context c, String message, String soundKey) {
+        start(c, message, soundKey, true);
+    }
+
+    public static void start(Context c, String message, String soundKey, boolean speak) {
         Intent it = new Intent(c, RingService.class);
         it.setAction(ACTION_RING);
         it.putExtra("message", message == null ? "" : message);
         it.putExtra("sound", soundKey == null ? "system" : soundKey);
+        it.putExtra("speak", speak);
         if (Build.VERSION.SDK_INT >= 26) c.startForegroundService(it);
         else c.startService(it);
+    }
+
+    /** 端侧 TTS：铃声起来后播报消息，之后每 30s 循环，直到停止。 */
+    private void startSpeaking() {
+        handler.removeCallbacks(speakLoop);
+        if (!RING_SPEAK) return;
+        handler.postDelayed(speakLoop, 1200); // 等铃声先起来
+    }
+
+    private void speakOnce() {
+        if (!RINGING || !RING_SPEAK) return;
+        final String text = RING_MESSAGE == null || RING_MESSAGE.trim().isEmpty()
+                ? "闹钟响了" : RING_MESSAGE;
+        SpeakManager.ensure(this, ok -> {
+            if (ok && RINGING) SpeakManager.speak(text, true);
+        });
+        handler.postDelayed(speakLoop, SPEAK_INTERVAL_MS);
     }
 
     /** 任意线程可调：直接停掉正在响的服务（服务在跑时同进程直调最稳）。 */
@@ -124,9 +152,11 @@ public class RingService extends Service {
     private void playSound() {
         stopPlayer();
         try {
-            SoundCatalog.Item item = SoundCatalog.find(RING_SOUND);
+            SoundCatalog.Item item = SoundCatalog.find(this, RING_SOUND);
             Uri uri;
-            if (item.resId != 0) {
+            if (item.path != null) {
+                uri = Uri.fromFile(new java.io.File(item.path)); // /api/audio 上传的自定义铃声
+            } else if (item.resId != 0) {
                 uri = Uri.parse("android.resource://" + getPackageName() + "/" + item.resId);
             } else {
                 uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
@@ -188,6 +218,7 @@ public class RingService extends Service {
 
     private void stopRingInternal() {
         handler.removeCallbacks(autoStop);
+        handler.removeCallbacks(speakLoop);
         RINGING = false;
         stopPlayer();
         RingActivity.finishIfShowing(); // 别让响铃界面残留过期内容
