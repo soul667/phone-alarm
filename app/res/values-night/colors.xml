@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#101218</color>
+    <color name="card">#1B1D29</color>
+    <color name="text_main">#ECEEF8</color>
+    <color name="text_sub">#8A90A6</color>
+    <color name="chip_off_bg">#24FFFFFF</color>
+    <color name="stroke">#2EFFFFFF</color>
+</resources>

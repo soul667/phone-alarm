@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#6C5CE7</color>
+    <color name="primary_deep">#5A4BD1</color>
+    <color name="bg">#F3F4FA</color>
+    <color name="card">#FFFFFF</color>
+    <color name="text_main">#1B1D2A</color>
+    <color name="text_sub">#8A90A6</color>
+    <color name="chip_off_bg">#141B1D2A</color>
+    <color name="stroke">#1E1B1D2A</color>
+    <color name="ok">#34C759</color>
+    <color name="danger">#FF5A6E</color>
+    <color name="ring_bg">#0B0C14</color>
+    <color name="ic_bg">#FF3F51B5</color>
+</resources>
