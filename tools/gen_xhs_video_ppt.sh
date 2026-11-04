@@ -16,8 +16,8 @@ import asyncio, sys
 import edge_tts
 out = sys.argv[1]
 lines = {
-    2: "极光深色界面，一句话设好闹钟",
-    3: "到点全屏响铃，AI语音喊你起床",
+    2: "挂上长任务，放心去休息",
+    3: "训练跑完，AI立刻叫你回来",
     4: "十二个MCP工具，还能自己合成语音铃声",
     5: "开源免费，GitHub搜 soul667 phone alarm",
 }
