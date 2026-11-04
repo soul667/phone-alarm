@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 极光深色调色板（单主题，闹钟 App 惯例暗色） -->
-    <color name="bg">#0A0C14</color>
-    <color name="card">#161927</color>
-    <color name="card_stroke">#1F2438</color>
-    <color name="chip_bg">#20243A</color>
-    <color name="text_main">#F2F4FF</color>
-    <color name="text_sub">#8A92B2</color>
-    <color name="accent">#7C6CFF</color>
-    <color name="accent2">#5AD8E6</color>
+    <!-- Material 3 深色 token（对齐 Figma "Aurora Refined" 12:5/12:6） -->
+    <color name="surface">#131318</color>
+    <color name="surface_container">#201F25</color>
+    <color name="surface_container_high">#2A292F</color>
+    <color name="outline_variant">#47464F</color>
+    <color name="on_surface">#E5E1E9</color>
+    <color name="on_surface_variant">#C8C5D0</color>
+    <color name="primary">#C5C0FF</color>
+    <color name="primary_container">#444078</color>
+    <color name="on_primary_container">#E5E1E9</color>
+    <color name="secondary_container">#E8DEF8</color>
+    <color name="on_secondary_container">#4A4459</color>
     <color name="ok">#4ADE80</color>
-    <color name="cta_text">#0A0C14</color>
-    <color name="ring_bg">#0A0C14</color>
+    <color name="ring_bg">#131318</color>
+    <color name="win_bg">#131318</color>
+    <color name="chip_bg">#2A292F</color>
     <color name="ic_bg">#FF3F51B5</color>
 </resources>

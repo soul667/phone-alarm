@@ -95,21 +95,33 @@ public class ApiService extends Service {
         }
     }
 
-    /** 枚举 wlan 等接口，取站点内 IPv4（排除 docker/虚拟网段由手机侧天然不涉及）。 */
+    /** 枚举接口取站点内 IPv4：按接口名优先级排序（wlan 最优），排除 VPN/蜂窝/共享等虚拟口。
+     *  返回 "ip1 / ip2"（最优在前）；无可用地址返回 "0.0.0.0"。 */
     public static String lanIps() {
-        StringBuilder sb = new StringBuilder();
+        java.util.List<String[]> found = new java.util.ArrayList<>();
         try {
             for (NetworkInterface nif : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                String name = nif.getName().toLowerCase();
                 if (!nif.isUp() || nif.isLoopback()) continue;
+                boolean virt = name.startsWith("tun") || name.startsWith("vgate")
+                        || name.startsWith("rmnet") || name.startsWith("ppp")
+                        || name.startsWith("swlan") || name.contains("dummy");
+                int pri = virt ? 2 : (name.startsWith("wlan") ? 0 : 1);
                 for (java.net.InetAddress addr : Collections.list(nif.getInetAddresses())) {
                     if (addr.isSiteLocalAddress() && addr.getAddress().length == 4) {
-                        if (sb.length() > 0) sb.append(" / ");
-                        sb.append(addr.getHostAddress());
+                        found.add(new String[]{pri + "_" + name, addr.getHostAddress()});
                     }
                 }
             }
         } catch (Exception ignored) { }
-        return sb.length() > 0 ? sb.toString() : "0.0.0.0";
+        if (found.isEmpty()) return "0.0.0.0";
+        found.sort((a, b) -> a[0].compareTo(b[0]));
+        StringBuilder sb = new StringBuilder();
+        for (String[] f : found) {
+            if (sb.length() > 0) sb.append(" / ");
+            sb.append(f[1]);
+        }
+        return sb.toString();
     }
 
     // ------------------------------------------------------------ 路由

@@ -2,28 +2,28 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="@color/bg"/>
+            <solid android:color="@color/surface"/>
         </shape>
     </item>
     <item>
         <shape android:shape="oval">
-            <gradient android:type="radial" android:gradientRadius="560dp"
-                android:centerX="0.12" android:centerY="0.02"
-                android:startColor="#5C6C5CFF" android:endColor="#006C5CFF"/>
+            <gradient android:type="radial" android:gradientRadius="300dp"
+                android:centerX="0.95" android:centerY="0.0"
+                android:startColor="#8C7C6CFF" android:endColor="#007C6CFF"/>
         </shape>
     </item>
     <item>
         <shape android:shape="oval">
-            <gradient android:type="radial" android:gradientRadius="520dp"
-                android:centerX="1.0" android:centerY="0.55"
-                android:startColor="#3A5AD8E6" android:endColor="#005AD8E6"/>
+            <gradient android:type="radial" android:gradientRadius="290dp"
+                android:centerX="-0.05" android:centerY="0.75"
+                android:startColor="#5C5AD8E6" android:endColor="#005AD8E6"/>
         </shape>
     </item>
     <item>
         <shape android:shape="oval">
-            <gradient android:type="radial" android:gradientRadius="480dp"
-                android:centerX="0.25" android:centerY="1.05"
-                android:startColor="#424A3ACF" android:endColor="#004A3ACF"/>
+            <gradient android:type="radial" android:gradientRadius="180dp"
+                android:centerX="0.92" android:centerY="0.88"
+                android:startColor="#5C7C6CFF" android:endColor="#007C6CFF"/>
         </shape>
     </item>
 </layer-list>

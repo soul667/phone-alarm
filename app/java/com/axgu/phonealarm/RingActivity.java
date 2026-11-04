@@ -95,7 +95,9 @@ public class RingActivity extends Activity {
                 week[(now.get(Calendar.DAY_OF_WEEK) + 5) % 7]));
 
         String msg = RingService.RING_MESSAGE;
-        label.setText(msg == null || msg.isEmpty() ? "闹钟" : msg);
+        String soundName = SoundCatalog.find(this, RingService.RING_SOUND).name;
+        String combined = (msg == null || msg.isEmpty() ? "闹钟" : msg);
+        label.setText(soundName + " · " + combined);
     }
 
     /** 光圈从中心扩散淡出，双圈错相呼吸。 */

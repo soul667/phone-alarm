@@ -9,93 +9,166 @@
         android:layout_height="match_parent"
         android:background="@drawable/bg_mesh"/>
 
-    <View
-        android:id="@+id/pulse1"
-        android:layout_width="290dp"
-        android:layout_height="290dp"
-        android:layout_gravity="center"
-        android:background="@drawable/bg_pulse"/>
-
-    <View
-        android:id="@+id/pulse2"
-        android:layout_width="290dp"
-        android:layout_height="290dp"
-        android:layout_gravity="center"
-        android:background="@drawable/bg_pulse"/>
-
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
+        android:layout_height="match_parent"
         android:orientation="vertical"
-        android:gravity="center_horizontal">
+        android:gravity="center_horizontal"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="32dp"
+        android:paddingBottom="32dp">
 
-        <TextView
-            android:id="@+id/ring_time"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="00:00"
-            android:textSize="86sp"
-            android:fontFamily="sans-serif-thin"
-            android:textColor="#FFFFFF"/>
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_card_high"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
-        <TextView
-            android:id="@+id/ring_date"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="11月4日 星期三"
-            android:textSize="13sp"
-            android:textColor="#CCFFFFFF"/>
+            <View
+                android:layout_width="7dp"
+                android:layout_height="7dp"
+                android:background="@drawable/bg_dot"/>
 
-        <TextView
-            android:id="@+id/ring_label"
-            android:layout_width="wrap_content"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="闹钟响铃中"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="@color/on_surface"/>
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:background="@drawable/bg_msg_pill"
-            android:paddingStart="20dp"
-            android:paddingEnd="20dp"
-            android:paddingTop="11dp"
-            android:paddingBottom="11dp"
-            android:text="闹钟"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:maxWidth="320dp"/>
+            android:layout_marginTop="40dp">
+
+            <View
+                android:id="@+id/pulse1"
+                android:layout_width="300dp"
+                android:layout_height="300dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_pulse"/>
+
+            <View
+                android:id="@+id/pulse2"
+                android:layout_width="240dp"
+                android:layout_height="240dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_pulse"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <FrameLayout
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_fab_icon">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_alarm"
+                        android:tint="@color/primary"
+                        android:contentDescription="alarm"/>
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/ring_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center"
+                    android:text="06:45"
+                    android:textSize="72sp"
+                    android:fontFamily="sans-serif-thin"
+                    android:textColor="@color/on_surface"/>
+
+                <TextView
+                    android:id="@+id/ring_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="11月4日 · 周三"
+                    android:textSize="13sp"
+                    android:textColor="@color/on_surface_variant"/>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_msg_pill"
+                    android:paddingStart="18dp"
+                    android:paddingEnd="18dp"
+                    android:paddingTop="14dp"
+                    android:paddingBottom="14dp">
+
+                    <View
+                        android:layout_width="6dp"
+                        android:layout_height="6dp"
+                        android:background="@drawable/bg_dot"/>
+
+                    <TextView
+                        android:id="@+id/ring_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:text="闹钟"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:maxWidth="300dp"
+                        android:textColor="@color/on_surface"/>
+                </LinearLayout>
+            </LinearLayout>
+        </FrameLayout>
+
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:layout_gravity="bottom"
-        android:layout_marginBottom="48dp"
+        android:layout_marginBottom="32dp"
         android:orientation="horizontal"
-        android:paddingStart="32dp"
-        android:paddingEnd="32dp">
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp">
 
         <TextView
             android:id="@+id/btn_snooze"
             android:layout_width="0dp"
-            android:layout_height="54dp"
+            android:layout_height="56dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_glass_chip"
+            android:background="@drawable/bg_tonal"
             android:gravity="center"
             android:text="贪睡 5 分钟"
-            android:textSize="14sp"
+            android:textSize="15sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"/>
+            android:textColor="@color/on_secondary_container"/>
 
         <TextView
             android:id="@+id/btn_stop"
             android:layout_width="0dp"
-            android:layout_height="54dp"
+            android:layout_height="56dp"
             android:layout_weight="1"
             android:layout_marginStart="12dp"
-            android:background="@drawable/bg_cta"
+            android:background="@drawable/bg_filled"
             android:gravity="center"
             android:text="停止"
-            android:textSize="14sp"
+            android:textSize="15sp"
             android:textStyle="bold"
-            android:textColor="@color/cta_text"/>
+            android:textColor="@color/on_secondary_container"/>
     </LinearLayout>
 </FrameLayout>
