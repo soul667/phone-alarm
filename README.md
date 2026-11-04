@@ -30,9 +30,9 @@
 
 ## 📸 界面
 
-| 主界面（浅色） | 主界面（深色自适应） | 响铃界面（大字消息 + 脉冲动画） |
-|---|---|---|
-| ![浅色](docs/img/main_light.png) | ![深色](docs/img/main_dark.png) | ![响铃](docs/img/ring.png) |
+| 主界面（Aurora Refined） | 响铃界面（大字消息 + 光圈） |
+|---|---|
+| ![主界面](docs/img/main_dark.png) | ![响铃](docs/img/shot_ring.png) |
 
 ## 🚀 快速开始
 

@@ -33,7 +33,7 @@ s = p.addSlide();
 s.background = { path: DIR + "bg_content.png" };
 T(s, "极光深色 UI", { x: 0.6, y: 0.75, w: 6.3, h: 0.95, fontSize: 42, bold: true });
 T(s, "挂上长任务，放心去休息", { x: 0.6, y: 1.78, w: 6.3, h: 0.45, fontSize: 16, color: ACCENT });
-s.addImage({ path: IMG + "figma_main.png", x: 2.0, y: 2.55, w: 3.5, h: 7.59, shadow: { type: "outer", color: "000000", blur: 28, offset: 8, angle: 90, opacity: 0.55 } });
+s.addImage({ path: IMG + "shot_main.png", x: 2.0, y: 2.55, w: 3.5, h: 7.59, shadow: { type: "outer", color: "000000", blur: 28, offset: 8, angle: 90, opacity: 0.55 } });
 chip(s, "任务完成闹钟 · 重复 / 一次性", 1.65, 10.75, 4.2);
 s.addNotes("挂上长任务，放心去休息");
 
@@ -42,7 +42,7 @@ s = p.addSlide();
 s.background = { path: DIR + "bg_content.png" };
 T(s, "AI 喊你回来", { x: 0.6, y: 0.75, w: 6.3, h: 0.95, fontSize: 42, bold: true });
 T(s, "训练 / 批处理跑完 · 全屏 + 语音叫醒", { x: 0.6, y: 1.78, w: 6.3, h: 0.45, fontSize: 16, color: ACCENT });
-s.addImage({ path: IMG + "figma_ring.png", x: 2.0, y: 2.55, w: 3.5, h: 7.59, shadow: { type: "outer", color: "000000", blur: 28, offset: 8, angle: 90, opacity: 0.55 } });
+s.addImage({ path: IMG + "shot_ring.png", x: 2.0, y: 2.55, w: 3.5, h: 7.59, shadow: { type: "outer", color: "000000", blur: 28, offset: 8, angle: 90, opacity: 0.55 } });
 chip(s, "核爆音量 · 不醒不行 · 5 分钟自动停", 1.55, 10.75, 4.4);
 s.addNotes("训练跑完，AI立刻叫你回来");
 
