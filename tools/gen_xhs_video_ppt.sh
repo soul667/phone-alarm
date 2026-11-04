@@ -17,7 +17,7 @@ import edge_tts
 out = sys.argv[1]
 lines = {
     2: "挂上长任务，放心去休息",
-    3: "训练跑完，AI立刻叫你回来",
+    3: "跑完叫你，出错了更第一时间叫你，防止白干",
     4: "十二个MCP工具，还能自己合成语音铃声",
     5: "开源免费，GitHub搜 soul667 phone alarm",
 }

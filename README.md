@@ -77,7 +77,7 @@ ZCode 配置（`mcp.servers`）：
 | `phone_update_alarm(alarm_id, ...)` | 按 id 改任意字段（`days=[]` 表示改一次性） |
 | `phone_toggle_alarm(alarm_id)` | 开/关切换 |
 | `phone_delete_alarm(alarm_id)` | 删除 |
-| `phone_ring_now(message?, sound?="nuke")` | **立即响铃**——核心场景：长任务跑完叫醒用户；也用于找手机 |
+| `phone_ring_now(message?, sound?="nuke")` | **立即响铃**——核心场景：长任务**跑完或受阻**（报错/卡死）时叫醒用户，防止白干；也用于找手机 |
 | `phone_stop_ring` | 停止响铃 |
 | `phone_say(text, engine?="edge")` | 让手机说话：node 内置 TTS 合成→推送播放；`engine="phone"` 走手机系统端侧引擎（部分 ROM 不可用） |
 | `phone_tts(text, save_as, voice?, play?)` | AI 合成语音存为自定义铃声（`sound="custom:名字"` 可用于任何闹钟） |

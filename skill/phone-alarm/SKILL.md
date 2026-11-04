@@ -1,6 +1,6 @@
 ---
 name: phone-alarm
-description: 用 MCP 控制 Android 手机的真实闹钟与语音播报：核心场景是**长任务跑完后叫醒用户**（训练/批处理/大下载挂机时用户去休息，agent 完成后立即响铃+语音提醒），也支持定时闹钟、找手机。当用户说"跑完了叫我/训练完叫醒我/任务完成提醒我/叫我起床/设个闹钟/找一下手机/手机响一下"等，或提到 phone-alarm 时使用。前置：用户手机需装开源 App https://github.com/soul667/phone-alarm
+description: 用 MCP 控制 Android 手机的真实闹钟与语音播报：核心场景是**长任务跑完、或中途受阻（报错/中断/卡死）时立刻叫醒用户，防止挂机一夜白干**（训练/批处理/大下载挂机时用户去休息，agent 检测到完成或异常立即响铃+语音提醒），也支持定时闹钟、找手机。当用户说"跑完了叫我/训练完叫醒我/挂了叫我/卡住叫我/任务完成提醒我/叫我起床/设个闹钟/找一下手机/手机响一下"等，或提到 phone-alarm 时使用。前置：用户手机需装开源 App https://github.com/soul667/phone-alarm
 ---
 
 # phone-alarm：控制用户手机的真实闹钟
@@ -48,10 +48,14 @@ description: 用 MCP 控制 Android 手机的真实闹钟与语音播报：核�
 
 **工作日闹钟**：`phone_set_alarm(hour=7, minute=30, label="上班", days=[1,2,3,4,5], sound="siren")`
 
-**任务完成提醒（核心场景）**：跑长命令前告知用户"跑完会叫你"，命令结束后：
+**任务完成 + 异常叫醒（核心场景，防白干）**：跑长命令前告知用户"跑完或出错都会叫你"。失败更要叫——挂机一夜静默失败最浪费：
    ```bash
-   phone_ring_now(message="训练完成，20000 步 ALL PASS，来收结果", sound="nuke")
+   # 成功分支
+   phone_ring_now(message="训练完成，20000 步 ALL PASS，来收结果", sound="birds")
+   # 失败分支（检测到非零退出/OOM/NaN/卡死）
+   phone_ring_now(message="训练 2000 步 OOM 崩了，速来止损", sound="nuke")
    ```
+   长任务建议加检查点轮询：每 N 分钟查一次日志/进度文件，连续 2 次无进展即视为卡死 → 立刻叫醒。
    更个性：先 `phone_tts(text="老板，训练跑完了，结果全绿", save_as="job_done")` → `phone_ring_now(message="训练完成", sound="custom:job_done")`
 
 **找手机**：`phone_ring_now(message="手机在这里！")`（默认核爆铃声，最长响 5 分钟自动停）

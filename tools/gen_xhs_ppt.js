@@ -23,9 +23,9 @@ const chip = (s, text, x, y, w) => {
 // ---- S1 封面 ----
 let s = p.addSlide();
 s.background = { path: DIR + "bg_cover.png" };
-T(s, "任务跑完了", { x: 0.7, y: 3.7, w: 6.1, h: 1.25, fontSize: 58, bold: true });
-T(s, "让 AI 叫醒你", { x: 0.7, y: 4.9, w: 6.1, h: 1.25, fontSize: 58, bold: true });
-T(s, "长任务 · MCP · 跑完立刻叫醒", { x: 0.7, y: 6.4, w: 6.1, h: 0.5, fontSize: 17, color: MUTED, charSpacing: 2 });
+T(s, "跑完或卡住", { x: 0.7, y: 3.7, w: 6.1, h: 1.25, fontSize: 58, bold: true });
+T(s, "都立刻叫你", { x: 0.7, y: 4.9, w: 6.1, h: 1.25, fontSize: 58, bold: true });
+T(s, "长任务 · MCP · 防止白干一夜", { x: 0.7, y: 6.4, w: 6.1, h: 0.5, fontSize: 17, color: MUTED, charSpacing: 2 });
 s.addNotes("");
 
 // ---- S2 主界面 ----
@@ -41,21 +41,21 @@ s.addNotes("挂上长任务，放心去休息");
 s = p.addSlide();
 s.background = { path: DIR + "bg_content.png" };
 T(s, "AI 喊你回来", { x: 0.6, y: 0.75, w: 6.3, h: 0.95, fontSize: 42, bold: true });
-T(s, "训练 / 批处理跑完 · 全屏 + 语音叫醒", { x: 0.6, y: 1.78, w: 6.3, h: 0.45, fontSize: 16, color: ACCENT });
+T(s, "报错 / 中断 / 跑完 · 全屏 + 语音叫醒", { x: 0.6, y: 1.78, w: 6.3, h: 0.45, fontSize: 16, color: ACCENT });
 s.addImage({ path: IMG + "shot_ring.png", x: 2.0, y: 2.55, w: 3.5, h: 7.59, shadow: { type: "outer", color: "000000", blur: 28, offset: 8, angle: 90, opacity: 0.55 } });
-chip(s, "核爆音量 · 不醒不行 · 5 分钟自动停", 1.55, 10.75, 4.4);
+chip(s, "失败止损 · 不醒不行 · 5 分钟自动停", 1.55, 10.75, 4.4);
 s.addNotes("训练跑完，AI立刻叫你回来");
 
 // ---- S4 能力面 ----
 s = p.addSlide();
 s.background = { path: DIR + "bg_content.png" };
 T(s, "12 个 MCP 工具", { x: 0.6, y: 1.05, w: 6.3, h: 0.95, fontSize: 42, bold: true });
-T(s, "挂机训练、批处理、大下载——跑完就叫你", { x: 0.6, y: 2.08, w: 6.3, h: 0.45, fontSize: 16, color: MUTED });
+T(s, "挂机训练、批处理、大下载——跑完或翻车都叫你", { x: 0.6, y: 2.08, w: 6.3, h: 0.45, fontSize: 16, color: MUTED });
 const feats = [
-  ["任务完成提醒", "长命令跑完 → phone_ring_now 立刻叫醒"],
+  ["任务完成叫醒", "长命令跑完 → 立刻叫你收结果"],
+  ["受阻止损叫醒", "报错 / OOM / 卡死 → 第一时间响铃，防止白干"],
   ["AI 语音播报", "node 内置 TTS，让手机开口说话"],
   ["7+ 款内置铃声", "核爆 / 防空警报 / 史诗鼓点 / 鸟鸣"],
-  ["闹钟全管理", "建 / 删 / 改 / 开关 · 重复与一次性"],
 ];
 feats.forEach((f, i) => {
   const y = 2.95 + i * 1.62;
